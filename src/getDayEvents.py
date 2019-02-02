@@ -35,9 +35,11 @@ def main():
     service = build('calendar', 'v3', credentials=creds)
 
     # Call the Calendar API
-    now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-    print('Getting the upcoming 10 events')
-    events_result = service.events().list(calendarId='primary', timeMin=now,
+    now = datetime.datetime.now().isoformat() + '-05:00' # 'Z' indicates UTC time
+    print(now)
+    endOfDay = find_end_of_day(now)
+    print('Getting todays events')
+    events_result = service.events().list(calendarId='primary', timeMin=now, timeMax=endOfDay,
                                         maxResults=10, singleEvents=True,
                                         orderBy='startTime').execute()
     events = events_result.get('items', [])
@@ -48,5 +50,12 @@ def main():
         start = event['start'].get('dateTime', event['start'].get('date'))
         print(start, event['summary'])
 
+# Yes this is a little hacky... its a hackathon!
+def find_end_of_day(stamp):
+    stampList = list(stamp)
+    stampList[11:26] = "23:59:59.999999"
+    return ''.join(stampList)
+
 if __name__ == '__main__':
     main()
+    print(find_end_of_day(datetime.datetime.now().isoformat() + '-05:00'))
