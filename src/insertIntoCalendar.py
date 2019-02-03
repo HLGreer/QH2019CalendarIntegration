@@ -36,20 +36,11 @@ def main():
 
     event = {
         'summary': 'Go swimming',
-        'location': '800 Howard St., San Francisco, CA 94103',
-        'description': 'I like swmming',
         'start': {
-            'dateTime': '2019-02-04T09:00:00-05:00',
+            'dateTime': '2019-02-05T09:00:00-05:00',
         },
         'end': {
-            'dateTime': '2019-02-04T10:00:00-05:00',
-        },
-        'reminders': {
-            'useDefault': False,
-            'overrides': [
-                {'method': 'email', 'minutes': 24 * 60},
-                {'method': 'popup', 'minutes': 10},
-            ],
+            'dateTime': '2019-02-05T10:00:00-05:00',
         },
     }
     event = service.events().insert(calendarId='primary', body=event).execute()
