@@ -7,7 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
+SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 def main():
     """Shows basic usage of the Google Calendar API.
@@ -59,6 +59,10 @@ def find_end_of_day(stamp):
     stampList[11:26] = "23:59:59.999999"
     return ''.join(stampList)
 
+def find_end_of_day_datetime(stamp):
+    endDayStamp = find_end_of_day(stamp)
+    return datetime.datetime.strptime(''.join(endDayStamp), '%Y-%m-%dT%H:%M:%S')
+
 def time_diffs(earlier, later):
     duration = later - earlier
     duration_in_s = duration.total_seconds()
@@ -68,10 +72,8 @@ def time_diffs(earlier, later):
 # Create a datetime object from one of the ugly rcf3339 formatted strings
 def create_datetime_from_rcf(rcfstr):
     rcflist = list(rcfstr)[0:19]
-    print (datetime.datetime.strptime(''.join(rcflist), '%Y-%m-%dT%H:%M:%S'))
+    #print (datetime.datetime.strptime(''.join(rcflist), '%Y-%m-%dT%H:%M:%S'))
     return datetime.datetime.strptime(''.join(rcflist), '%Y-%m-%dT%H:%M:%S')
-
-
 
 def find_free_time(events):
     if not events:
@@ -89,11 +91,21 @@ def find_free_time(events):
         if (firstEndTime < secondStartTime):
             duration = time_diffs(firstEndTime,secondStartTime)
             gapTimes.append([firstEndTime, duration])
+        gapEndDay = find_free_time_at_end_of_day(events[len(events)-1],find_end_of_day(datetime.datetime.now().isoformat()))
+        if gapEndDay is not None:
+            gapTimes.append(gapEndDay)
     return gapTimes
+
+def find_free_time_at_end_of_day(event, endOfDayTime):
+    end = event['end'].get('dateTime', event['end'].get('date'))
+    lasteventDatetime = create_datetime_from_rcf(end)
+    dayEndDatetime = create_datetime_from_rcf(endOfDayTime)
+    if lasteventDatetime < dayEndDatetime:
+        duration = time_diffs(lasteventDatetime, dayEndDatetime)
+        return [lasteventDatetime, duration]
+    return None
 
 
 if __name__ == '__main__':
     main()
-
-    #print(find_end_of_day(datetime.datetime.now().isoformat() + '-05:00'))
 
