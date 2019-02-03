@@ -38,20 +38,20 @@ def main():
     now = datetime.datetime.now().isoformat() + '-05:00' # 'Z' indicates UTC time
     print(now)
     endOfDay = find_end_of_day(now)
-    print(time_diffs(now,endOfDay))
 
     events_result = service.events().list(calendarId='primary', timeMin=now, timeMax=endOfDay,
                                         maxResults=10, singleEvents=True,
                                         orderBy='startTime').execute()
     events = events_result.get('items', [])
-    print(events)
+    print(find_free_time(events))
 
-    if not events:
-        print('No upcoming events found.')
-    for event in events:
-        #print(event)
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'])
+    # if not events:
+    #     print('No upcoming events found.')
+    # for event in events:
+    #     #print(event)
+    #     start = event['start'].get('dateTime', event['start'].get('date'))
+    #     end = event['end'].get('dateTime', event['end'].get('date'))
+    #     print(start, end, event['summary'])
 
 # Yes this is a little hacky... its a hackathon!
 def find_end_of_day(stamp):
@@ -60,21 +60,40 @@ def find_end_of_day(stamp):
     return ''.join(stampList)
 
 def time_diffs(earlier, later):
-    time1 = list(earlier)[11:19]
-    time1 = ''.join(time1)
-    time2 = list(later)[11:19]
-    time2 = ''.join(time2)
-    time1ob = datetime.datetime.strptime(time1, '%H:%M:%S')
-    time2ob = datetime.datetime.strptime(time2, '%H:%M:%S')
-    duration = time2ob - time1ob
+    duration = later - earlier
     duration_in_s = duration.total_seconds()
     minutes = divmod(duration_in_s, 60)[0]
     return minutes
 
+# Create a datetime object from one of the ugly rcf3339 formatted strings
+def create_datetime_from_rcf(rcfstr):
+    rcflist = list(rcfstr)[0:19]
+    print (datetime.datetime.strptime(''.join(rcflist), '%Y-%m-%dT%H:%M:%S'))
+    return datetime.datetime.strptime(''.join(rcflist), '%Y-%m-%dT%H:%M:%S')
+
+
+
 def find_free_time(events):
-    pass
+    if not events:
+        print('No upcoming events found.')
+    countEvents = 0
+    gapTimes = [] # a list of lists where each internal list is [gapstarttime, duration] where duration is in minutes
+    for i in range(0,len(events)-1):
+        event = events[i]
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        end = event['end'].get('dateTime', event['end'].get('date'))
+        laterEvent = events[i+1]
+        startofNextEvent = laterEvent['start'].get('dateTime', laterEvent['start'].get('date'))
+        firstEndTime = create_datetime_from_rcf(end)
+        secondStartTime = create_datetime_from_rcf(startofNextEvent)
+        if (firstEndTime < secondStartTime):
+            duration = time_diffs(firstEndTime,secondStartTime)
+            gapTimes.append([firstEndTime, duration])
+    return gapTimes
+
 
 if __name__ == '__main__':
     main()
+
     #print(find_end_of_day(datetime.datetime.now().isoformat() + '-05:00'))
 
